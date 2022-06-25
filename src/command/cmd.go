@@ -4,6 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"mini-docker/src/cgroups/subsystem"
 	"mini-docker/src/container"
 	"mini-docker/src/run"
 )
@@ -31,14 +32,34 @@ var RunGockerCMD = cli.Command{
 			Name:  "ti",
 			Usage: "enable tty",
 		},
+		cli.StringFlag{
+			Name:  "mem",
+			Usage: "memory limit",
+		},
+		cli.StringFlag{
+			Name:  "cpuset",
+			Usage: "cpuset limit",
+		},
+		cli.StringFlag{
+			Name:  "cpushare",
+			Usage: "cpushare limit",
+		},
 	},
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
 			fmt.Errorf("missing container command args")
 		}
-		cmd := context.Args().Get(0)
+		var cmdArray []string
+		for _, arg := range context.Args() {
+			cmdArray = append(cmdArray, arg)
+		}
 		tty := context.Bool("ti")
-		run.Run(tty, cmd)
+		resConfig := &subsystem.ResourceConfig{
+			MemoryLimit: context.String("mem"),
+			CpuSet:      context.String("cpuShare"),
+			CpuShare:    context.String("cpuSet"),
+		}
+		run.Run(tty, cmdArray, resConfig)
 		return nil
 	},
 }
