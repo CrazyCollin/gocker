@@ -2,8 +2,10 @@ package container
 
 import (
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -14,8 +16,7 @@ import (
 // @param args
 // @return error
 //
-func RunContainerInitProcess(cmd string, args []string) error {
-	log.Infof("RunContainerInitProcess command %s,args %s", cmd, args)
+func RunContainerInitProcess() error {
 	err := syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
 	if err != nil {
 		log.Errorf("private mount error:%v", err)
@@ -28,14 +29,25 @@ func RunContainerInitProcess(cmd string, args []string) error {
 		return err
 	}
 
-	path, err := exec.LookPath(cmd)
+	cmdArray := readUserCommand()
+	path, err := exec.LookPath(cmdArray[0])
 	if err != nil {
-		log.Errorf("can't find exec path:%s %v", cmd, err)
+		log.Errorf("can't find exec path:%s %v", cmdArray[0], err)
 		return err
 	}
 	log.Infof("find path:%s", path)
-	if err := syscall.Exec(path, args, os.Environ()); err != nil {
+	if err := syscall.Exec(path, cmdArray, os.Environ()); err != nil {
 		log.Errorf("syscall exec error:%v", err.Error())
 	}
 	return nil
+}
+
+func readUserCommand() []string {
+	readPipe := os.NewFile(uintptr(3), "pipe")
+	msg, err := ioutil.ReadAll(readPipe)
+	if err != nil {
+		log.Errorf("read init argv pipe error:%v", err)
+		return nil
+	}
+	return strings.Split(string(msg), " ")
 }
