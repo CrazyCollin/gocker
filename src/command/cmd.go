@@ -12,7 +12,7 @@ var (
 	tty bool
 )
 
-var initGockerCMD = cli.Command{
+var InitGockerCMD = cli.Command{
 	Name:  "init",
 	Usage: "Init container process run user's process in container. Do not call it outside",
 	Action: func(context *cli.Context) error {
@@ -23,7 +23,7 @@ var initGockerCMD = cli.Command{
 	},
 }
 
-var runGockerCMD = cli.Command{
+var RunGockerCMD = cli.Command{
 	Name:  "run",
 	Usage: `Create a container with namespace and cgroups limit mydocker run -ti [command]`,
 	Flags: []cli.Flag{
