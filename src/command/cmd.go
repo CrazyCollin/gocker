@@ -20,7 +20,7 @@ var InitGockerCMD = cli.Command{
 		log.Infof("init come on")
 		cmd := context.Args().Get(0)
 		log.Infof("command %s", cmd)
-		return container.RunContainerInitProcess(cmd, nil)
+		return container.RunContainerInitProcess()
 	},
 }
 
