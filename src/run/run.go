@@ -5,7 +5,9 @@ import (
 	"mini-docker/src/cgroups"
 	"mini-docker/src/cgroups/subsystem"
 	"mini-docker/src/container"
+	"mini-docker/src/record"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -15,14 +17,24 @@ import (
 // @param tty
 // @param cmd
 //
-func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig) {
+func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig, cgroupName string,
+	volume, containerName, ImageTarPath, cID string, envSlice, portMappings []string, networkName string) {
 	parent, writePipe := container.NewParentProcess(tty)
+	//执行命令但不等待其结束
+	//fork子进程，在/proc/self/exe中调用自己
 	if err := parent.Start(); err != nil {
 		log.Error(err)
 		return
 	}
-	cgroupManager := cgroups.NewCgroupManager("Gocker-cgroup")
-	defer cgroupManager.Destroy()
+
+	//记录容器信息
+
+	//设置容器网络
+	if networkName != "" {
+
+	}
+
+	cgroupManager := cgroups.NewCgroupManager(cgroupName + "-" + cID)
 	if err := cgroupManager.Apply(parent.Process.Pid); err != nil {
 		log.Errorf("cgroup apply error:%v", err)
 		return
@@ -34,9 +46,22 @@ func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig) {
 
 	sendInitCommand(cmdArray, writePipe)
 
-	log.Infof("parent process run")
-	_ = parent.Wait()
-	os.Exit(-1)
+	//等待结束
+	if tty {
+		//tty模式下父进程等待子进程结束
+		if err := parent.Wait(); err != nil {
+			log.Error(err)
+		}
+		cgroupManager.Destroy()
+		mntURL := path.Join(record.RootURL, "mnt", cID)
+		container.DeleteWorkspace(record.RootURL, mntURL, volume, cID)
+
+		os.Exit(1)
+	} else {
+		//交由system pid=1的进程接管
+		//fmt.Printf()
+		//todo return container id
+	}
 }
 
 func sendInitCommand(array []string, writePipe *os.File) {
