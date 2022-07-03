@@ -2,7 +2,7 @@ package container
 
 import (
 	log "github.com/sirupsen/logrus"
-	"mini-docker/src/record"
+	"gocker/src/record"
 	"os/exec"
 	"path"
 )

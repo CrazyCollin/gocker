@@ -3,7 +3,7 @@ package container
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"mini-docker/src/utils"
+	"gocker/src/utils"
 	"os"
 	"os/exec"
 	"path"

@@ -3,7 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"mini-docker/src/command"
+	"gocker/src/command"
 	"os"
 )
 

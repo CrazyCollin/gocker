@@ -1,4 +1,4 @@
-module mini-docker
+module gocker
 
 go 1.17
 

@@ -1,6 +1,6 @@
 package cgroups
 
-import "mini-docker/src/cgroups/subsystem"
+import "gocker/src/cgroups/subsystem"
 
 //
 // CgroupManager

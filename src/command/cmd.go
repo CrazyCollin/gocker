@@ -4,9 +4,9 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"mini-docker/src/cgroups/subsystem"
-	"mini-docker/src/container"
-	"mini-docker/src/run"
+	"gocker/src/cgroups/subsystem"
+	"gocker/src/container"
+	"gocker/src/run"
 )
 
 var (
@@ -95,6 +95,14 @@ var RunGockerCMD = cli.Command{
 		envSlice, portMappings := []string{""}, []string{""}
 		networkName := context.String("net")
 		run.Run(tty, cmdArray, resConfig, "gocker", volume, containerName, "./busybox.tar", containerID, envSlice, portMappings, networkName)
+		return nil
+	},
+}
+
+var ListContainerInfoCMD = cli.Command{
+	Name:  "ps",
+	Usage: "list all containers info",
+	Action: func(context *cli.Context) error {
 		return nil
 	},
 }

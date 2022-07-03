@@ -2,10 +2,10 @@ package run
 
 import (
 	log "github.com/sirupsen/logrus"
-	"mini-docker/src/cgroups"
-	"mini-docker/src/cgroups/subsystem"
-	"mini-docker/src/container"
-	"mini-docker/src/record"
+	"gocker/src/cgroups"
+	"gocker/src/cgroups/subsystem"
+	"gocker/src/container"
+	"gocker/src/record"
 	"os"
 	"path"
 	"strings"
