@@ -6,6 +6,8 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocker/src/record"
+	"gocker/src/utils"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -155,6 +157,55 @@ func DeleteContainerInfo(cID string) {
 	infoFilePath := path.Join(record.DefaultInfoLocation, cID)
 	if err := os.RemoveAll(infoFilePath); err != nil {
 		log.Errorf("delete [%s] container info error:%v", err)
+		return
+	}
+}
+
+//
+// exportContainerLogs
+// @Description:创建容器日志文件，并将标准输出重定向至日志文件
+// @param cID
+// @param cmdOut
+//
+func exportContainerLogs(cID string, cmdOut *io.Writer) {
+	logFilePath := path.Join(record.DefaultInfoLocation, cID)
+	if has, err := utils.DirOrFileExist(logFilePath); err == nil && !has {
+		if err := os.MkdirAll(logFilePath, 0622); err != nil {
+			log.Errorf("create container logs dir error:%v", err)
+			return
+		}
+	}
+	logFilePath = path.Join(logFilePath, record.LogFileName)
+	logFile, err := os.Create(logFilePath)
+	if err != nil {
+		log.Errorf("create container logs error:%v", err)
+		return
+	}
+	//todo 不是很懂标准输入输出
+	*cmdOut = logFile
+}
+
+//
+// CheckLogsOfContainer
+// @Description: 获取容器的日志信息
+// @param cID
+//
+func CheckLogsOfContainer(cID string) {
+	logFilePath := path.Join(record.DefaultInfoLocation, cID, record.LogFileName)
+	logFile, err := os.Open(logFilePath)
+	if err != nil {
+		log.Errorf("open container logs file error:%v", err)
+		return
+	}
+	defer logFile.Close()
+	logs, err := ioutil.ReadAll(logFile)
+	if err != nil {
+		log.Errorf("read container logs error:%v", err)
+		return
+	}
+	_, err = fmt.Fprint(os.Stdout, string(logs))
+	if err != nil {
+		log.Errorf("")
 		return
 	}
 }

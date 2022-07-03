@@ -72,7 +72,7 @@ var RunGockerCMD = cli.Command{
 	//  run命令执行的函数
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
-			fmt.Errorf("missing container command args")
+			return fmt.Errorf("missing container command args")
 		}
 		var cmdArray []string
 		for _, arg := range context.Args() {
@@ -82,7 +82,7 @@ var RunGockerCMD = cli.Command{
 		tty := context.Bool("ti")
 		detach := context.Bool("d")
 		if tty && detach {
-			fmt.Errorf("can not enable tty and detach at the same time")
+			return fmt.Errorf("can not enable tty and detach at the same time")
 		}
 		containerName := context.String("name")
 		resConfig := &subsystem.ResourceConfig{
@@ -113,10 +113,23 @@ var CommitContainerCMD = cli.Command{
 	Usage: "commit container into image",
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
-			fmt.Errorf("missing commit container name of a command")
+			return fmt.Errorf("missing commit container name of a command")
 		}
 		cID, imageName := context.Args().Get(0), context.Args().Get(1)
 		container.CommitContainer(cID, imageName)
+		return nil
+	},
+}
+
+var CheckLogCMD = cli.Command{
+	Name:  "logs",
+	Usage: "check the logs of a container with cID",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("missing cID of container when you want to check contaienr logs")
+		}
+		cID := context.Args().Get(0)
+		container.CheckLogsOfContainer(cID)
 		return nil
 	},
 }

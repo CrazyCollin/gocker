@@ -29,6 +29,8 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		exportContainerLogs("", &cmd.Stdout)
 	}
 	cmd.ExtraFiles = []*os.File{readPipe}
 	return cmd, writePipe
