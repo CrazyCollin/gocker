@@ -103,6 +103,7 @@ var ListContainerInfoCMD = cli.Command{
 	Name:  "ps",
 	Usage: "list all containers info",
 	Action: func(context *cli.Context) error {
+		container.ListContainerInfo()
 		return nil
 	},
 }

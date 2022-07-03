@@ -6,11 +6,14 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocker/src/record"
+	"io/fs"
+	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"syscall"
+	"text/tabwriter"
 	"time"
 )
 
@@ -80,6 +83,67 @@ func InitContainerInfo(cID string, cPID int, cmdArray []string, containerName, v
 		return nil, err
 	}
 	return containerInfo, nil
+}
+
+//
+// ListContainerInfo
+// @Description: 列出所有容器的基本信息
+//
+func ListContainerInfo() {
+	filesPath := path.Join(record.DefaultInfoLocation)
+	infoFiles, err := ioutil.ReadDir(filesPath)
+	if err != nil {
+		log.Errorf("read info file dir error:%v", err)
+		return
+	}
+	var containersInfo []*record.ContainerInfo
+	//遍历所有容器的元数据信息
+	for _, file := range infoFiles {
+		if file.Name() == "network" {
+			continue
+		}
+		//获取单个容器的信息
+		containerInfo, err := getContainerInfoFromFile(file)
+		if err != nil {
+			log.Errorf("get info from one container error:%v", err)
+		}
+		containersInfo = append(containersInfo, containerInfo)
+	}
+	//输出所有容器信息
+	w := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
+	fmt.Fprint(w, "ID\tNAME\tPID\tSTATUS\tCOMMAND\tCREATE\n")
+	for _, info := range containersInfo {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t\n", info.Id, info.Name, info.Pid, info.Status, info.Command, info.CreateTime)
+	}
+	if err := w.Flush(); err != nil {
+		log.Errorf("display containers info error:%v", err)
+		return
+	}
+}
+
+//
+// getContainerInfoFromFile
+// @Description: 从info文件中获取单个容器的元数据
+// @param file
+// @return *record.ContainerInfo
+// @return error
+//
+func getContainerInfoFromFile(file fs.FileInfo) (*record.ContainerInfo, error) {
+	fileName := file.Name()
+	filePath := path.Join(record.DefaultInfoLocation, fileName, record.ConfigName)
+	fileBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Errorf("read container info file error:%v", err)
+		return nil, err
+	}
+	containerInfo := &record.ContainerInfo{}
+	err = json.Unmarshal(fileBytes, containerInfo)
+	if err != nil {
+		log.Errorf("unmarshal container info error:%v", err)
+		return nil, err
+	}
+	return containerInfo, nil
+
 }
 
 //
