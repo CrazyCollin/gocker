@@ -133,3 +133,16 @@ var CheckLogCMD = cli.Command{
 		return nil
 	},
 }
+
+var StopContainerCMD = cli.Command{
+	Name:  "stop",
+	Usage: "stop the running container",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("missing the cID of container when you want to stop a contaienr")
+		}
+		cID := context.Args().Get(0)
+		container.StopContainer(cID)
+		return nil
+	},
+}
