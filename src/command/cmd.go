@@ -146,3 +146,16 @@ var StopContainerCMD = cli.Command{
 		return nil
 	},
 }
+
+var RemoveContainerCMD = cli.Command{
+	Name:  "rm",
+	Usage: "remove container",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("missing the cID of container when you want to remove a contaienr")
+		}
+		cID := context.Args().Get(0)
+		container.RemoveContainer(cID)
+		return nil
+	},
+}

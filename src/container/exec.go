@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gocker/src/record"
 	"io/ioutil"
+	"os"
 	"path"
 	"strconv"
 	"syscall"
@@ -62,5 +63,30 @@ func StopContainer(cID string) {
 	if err := ioutil.WriteFile(infoFilePath, info, 0622); err != nil {
 		log.Errorf("kill container process error:%v", err)
 		return
+	}
+}
+
+//
+// RemoveContainer
+// @Description: 删除指定容器
+// @param cID
+//
+func RemoveContainer(cID string) {
+	containerInfo, err := getContainerInfo(cID)
+	if err != nil {
+		log.Errorf("remove contianer error:%v", err)
+		return
+	}
+	//删除容器相关信息
+	if containerInfo.Status == record.STOP {
+		infoFilePath := path.Join(record.DefaultInfoLocation, cID)
+		if err := os.RemoveAll(infoFilePath); err != nil {
+			log.Errorf("remove container error:%v", err)
+			return
+		}
+		mntURL := path.Join(record.RootURL, "mnt", cID)
+		DeleteWorkspace(record.RootURL, mntURL, containerInfo.Volume, cID)
+	} else {
+		log.Warnf("please set contianer stopped first")
 	}
 }
