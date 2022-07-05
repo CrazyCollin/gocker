@@ -6,7 +6,11 @@ import (
 	"github.com/urfave/cli"
 	"gocker/src/cgroups/subsystem"
 	"gocker/src/container"
+	"gocker/src/nsenter"
+	"gocker/src/record"
 	"gocker/src/run"
+	"os"
+	"strings"
 )
 
 var (
@@ -68,6 +72,10 @@ var RunGockerCMD = cli.Command{
 			Name:  "net",
 			Usage: "setup container's internet",
 		},
+		cli.StringSliceFlag{
+			Name:  "e",
+			Usage: "setup container environment",
+		},
 	},
 	//  run命令执行的函数
 	Action: func(context *cli.Context) error {
@@ -92,9 +100,29 @@ var RunGockerCMD = cli.Command{
 		}
 		containerID := container.RandContainerIDGenerator(10)
 		volume := context.String("v")
-		envSlice, portMappings := []string{""}, []string{""}
+		envSlice := context.StringSlice("e")
+		portMappings := []string{""}
 		networkName := context.String("net")
 		run.Run(tty, cmdArray, resConfig, "gocker", volume, containerName, "./busybox.tar", containerID, envSlice, portMappings, networkName)
+		return nil
+	},
+}
+
+var ExecContainerCMD = cli.Command{
+	Name:  "exec",
+	Usage: "exec container",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("missing exec container id or command")
+		}
+		//第二次调用直接进入对应容器namespace
+		//todo 待支持判断不同exec command
+		if os.Getenv(record.EnvExecPid) != "" {
+			log.Infof("enter container namespace")
+			nsenter.EnterNamespace()
+		}
+		cID, cmdArray := context.Args().Get(0), strings.Split(context.Args().Get(1), " ")
+		container.ExecContainer(cID, cmdArray)
 		return nil
 	},
 }

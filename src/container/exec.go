@@ -2,14 +2,55 @@ package container
 
 import (
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocker/src/record"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 	"syscall"
 )
+
+//
+// ExecContainer
+// @Description: exec容器
+// @param cID
+// @param cmdArray
+//
+func ExecContainer(cID string, cmdArray []string) {
+	containerInfo, err := getContainerInfo(cID)
+	if err != nil {
+		log.Errorf("exec container error:%v", err)
+		return
+	}
+	cmdStr := strings.Join(cmdArray, " ")
+	log.Infof("env container pid %s", containerInfo.Pid)
+	log.Infof("env contianer ccommand:%s", cmdStr)
+
+	cmd := exec.Command("/proc/self/exe", "exec")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	//设置pid和command
+	if err := os.Setenv(record.EnvExecPid, containerInfo.Pid); err != nil {
+		log.Errorf("exec container of set pid env error:%v", err)
+		return
+	}
+	if err := os.Setenv(record.EnvExecCmd, cmdStr); err != nil {
+		log.Errorf("exec container of set command env error:%v", err)
+		return
+	}
+	envs := getEnvsById(containerInfo.Pid)
+	cmd.Env = append(os.Environ(), envs...)
+	if err := cmd.Run(); err != nil {
+		log.Errorf("run container command error:%v", err)
+		return
+	}
+}
 
 //
 // getContainerInfo
@@ -89,4 +130,22 @@ func RemoveContainer(cID string) {
 	} else {
 		log.Warnf("please set contianer stopped first")
 	}
+}
+
+//
+// getEnvsById
+// @Description: 根据容器pid得到其环境变量
+// @param cPID
+// @return []string
+//
+func getEnvsById(cPID string) []string {
+	//进程的环境变量都存在/proc/pid/environ中
+	envsPath := fmt.Sprintf("/proc/%s/environ", cPID)
+	envsInfo, err := ioutil.ReadFile(envsPath)
+	if err != nil {
+		log.Errorf("get container environment error:%v", err)
+		return nil
+	}
+	envs := strings.Split(string(envsInfo), "\u0000")
+	return envs
 }

@@ -19,7 +19,7 @@ import (
 //
 func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig, cgroupName string,
 	volume, containerName, ImageTarPath, cID string, envSlice, portMappings []string, networkName string) {
-	parent, writePipe := container.NewParentProcess(tty)
+	parent, writePipe := container.NewParentProcess(tty, volume, ImageTarPath, cID, envSlice)
 	//执行命令但不等待其结束
 	//fork子进程，在/proc/self/exe中调用自己
 	if err := parent.Start(); err != nil {

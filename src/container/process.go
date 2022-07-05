@@ -2,8 +2,10 @@ package container
 
 import (
 	log "github.com/sirupsen/logrus"
+	"gocker/src/record"
 	"os"
 	"os/exec"
+	"path"
 	"syscall"
 )
 
@@ -14,7 +16,7 @@ import (
 // @return *exec.Cmd
 // @return *os.File
 //
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, ImageTarPath, cID string, envSlice []string) (*exec.Cmd, *os.File) {
 	//生成管道
 	readPipe, writePipe, err := os.Pipe()
 	if err != nil {
@@ -30,8 +32,12 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
-		exportContainerLogs("", &cmd.Stdout)
+		exportContainerLogs(cID, &cmd.Stdout)
 	}
+	//设置容器进程启动路径
+	mntURL := path.Join(record.RootURL, "mnt", cID)
+	cmd.Dir = mntURL
 	cmd.ExtraFiles = []*os.File{readPipe}
+	cmd.Env = append(os.Environ(), envSlice...)
 	return cmd, writePipe
 }

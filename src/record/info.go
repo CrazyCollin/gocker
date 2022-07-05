@@ -22,6 +22,11 @@ const (
 	RootURL             = "/var/lib/gocker/aufs/"
 )
 
+const (
+	EnvExecPid = "gocker_pid"
+	EnvExecCmd = "gocker_cmd"
+)
+
 var (
 	ConfigName  = "containerInfo.json"
 	LogFileName = "container.log"
