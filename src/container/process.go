@@ -34,9 +34,13 @@ func NewParentProcess(tty bool, volume, ImageTarPath, cID string, envSlice []str
 	} else {
 		exportContainerLogs(cID, &cmd.Stdout)
 	}
-	//设置容器进程启动路径
+	//创建容器工作空间
 	mntURL := path.Join(record.RootURL, "mnt", cID)
+	NewWorkSpace(record.RootURL, mntURL, ImageTarPath, volume, cID)
+	//设置容器进程启动路径
 	cmd.Dir = mntURL
+	//传入管道文件句炳
+	//指定要由新进程的打开文件
 	cmd.ExtraFiles = []*os.File{readPipe}
 	cmd.Env = append(os.Environ(), envSlice...)
 	return cmd, writePipe

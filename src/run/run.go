@@ -28,11 +28,19 @@ func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig, cgroupNa
 	}
 
 	//记录容器信息
+	containerInfo, err := container.InitContainerInfo(cID, parent.Process.Pid, cmdArray, containerName, volume, portMappings)
+	if err != nil {
+		log.Errorf("run container errror:%v", err)
+		return
+	}
 
 	//设置容器网络
 	if networkName != "" {
 
 	}
+
+	//发送command
+	sendInitCommand(cmdArray, writePipe)
 
 	cgroupManager := cgroups.NewCgroupManager(cgroupName + "-" + cID)
 	if err := cgroupManager.Apply(parent.Process.Pid); err != nil {
@@ -44,8 +52,6 @@ func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig, cgroupNa
 		return
 	}
 
-	sendInitCommand(cmdArray, writePipe)
-
 	//等待结束
 	if tty {
 		//tty模式下父进程等待子进程结束
@@ -55,7 +61,7 @@ func Run(tty bool, cmdArray []string, config *subsystem.ResourceConfig, cgroupNa
 		cgroupManager.Destroy()
 		mntURL := path.Join(record.RootURL, "mnt", cID)
 		container.DeleteWorkspace(record.RootURL, mntURL, volume, cID)
-
+		container.DeleteContainerInfo(containerInfo.Id)
 		os.Exit(1)
 	} else {
 		//交由system pid=1的进程接管
