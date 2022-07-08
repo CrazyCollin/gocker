@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"gocker/src/cgroups/subsystem"
 	"gocker/src/container"
+	"gocker/src/network"
 	"gocker/src/nsenter"
 	"gocker/src/record"
 	"gocker/src/run"
@@ -70,7 +71,11 @@ var RunGockerCMD = cli.Command{
 		//设置容器网络
 		cli.StringFlag{
 			Name:  "net",
-			Usage: "setup container's internet",
+			Usage: "setup container's network",
+		},
+		cli.StringSliceFlag{
+			Name:  "p",
+			Usage: "setup container port mapping",
 		},
 		cli.StringSliceFlag{
 			Name:  "e",
@@ -101,7 +106,7 @@ var RunGockerCMD = cli.Command{
 		containerID := container.RandContainerIDGenerator(10)
 		volume := context.String("v")
 		envSlice := context.StringSlice("e")
-		portMappings := []string{""}
+		portMappings := context.StringSlice("p")
 		networkName := context.String("net")
 		run.Run(tty, cmdArray, resConfig, "gocker", volume, containerName, "./busybox.tar", containerID, envSlice, portMappings, networkName)
 		return nil
@@ -185,5 +190,71 @@ var RemoveContainerCMD = cli.Command{
 		cID := context.Args().Get(0)
 		container.RemoveContainer(cID)
 		return nil
+	},
+}
+
+var NetworkCMD = cli.Command{
+	Name:  "network",
+	Usage: "manage container network",
+	Subcommands: []cli.Command{
+		{
+			Name:  "create",
+			Usage: "create a container network",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "driver",
+					Usage: "network driver",
+				},
+				cli.StringFlag{
+					Name:  "subnet",
+					Usage: "subnet cidr",
+				},
+			},
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("missing essential args for create container network")
+				}
+				if err := network.Init(); err != nil {
+					return err
+				}
+				driver := context.String("driver")
+				subnet := context.String("subnet")
+				networkName := context.Args().Get(0)
+				if err := network.CreateNetwork(driver, subnet, networkName); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			Name:  "list",
+			Usage: "list container network",
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("missing essential args for create container network")
+				}
+				if err := network.Init(); err != nil {
+					return err
+				}
+				network.ListNetwork()
+				return nil
+			},
+		},
+		{
+			Name:  "remove",
+			Usage: "remove a container network",
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("missing essential args for create container network")
+				}
+				if err := network.Init(); err != nil {
+					return err
+				}
+				if err := network.DeleteNetwork(context.Args().Get(0)); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	},
 }
