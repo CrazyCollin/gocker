@@ -8,7 +8,7 @@ import (
 
 //
 // Network
-// @Description:容器网络集合，此网络上容器可以h互相通信
+// @Description:容器网络集合，此网络上容器可以互相通信
 //
 type Network struct {
 	Name    string     `json:"name"`
@@ -21,74 +21,31 @@ type Network struct {
 // @Description:网络端点，用于连接容器和网络，保证容器内部和网络的通信
 //
 type Endpoint struct {
-	ID          string           `json:"id"`
-	Device      netlink.Device   `json:"dev"`
-	IpAddress   net.IP           `json:"ip"`
-	MacAddress  net.HardwareAddr `json:"mac"`
-	PortMapping []string         `json:"port_mapping"`
-	Network     *Network
+	//ID
+	ID string `json:"id"`
+	//veth设备
+	Device netlink.Device `json:"dev"`
+	//ip地址
+	IpAddress net.IP `json:"ip"`
+	//mac地址
+	MacAddress net.HardwareAddr `json:"mac"`
+	//端口映射
+	PortMapping []string `json:"port_mapping"`
+	//网络
+	Network *Network
 }
 
 type NetworkDriver interface {
+	//驱动名
 	Name() string
+	//创建网络
 	Create(subnet, name string) (*Network, error)
+	//删除网络
 	Delete(network *Network) error
+	//将指定容器网络端点连接至网络中
 	Connect(network *Network, endpoint *Endpoint) error
+	//将容器网络端点从网络中删除
 	Disconnect(network *Network, endpoint *Endpoint) error
-}
-
-//
-// Init
-// @Description: 从配置中加载网络配置信息
-// @return error
-//
-func Init() error {
-	//加载bridge驱动
-	var bridgeDriver = &BridgeNetworkDriver{}
-	record.Drivers[bridgeDriver.Name()] = bridgeDriver
-
-	return nil
-}
-
-//
-// CreateNetwork
-// @Description: 创建网络
-// @param driver
-// @param subnet
-// @param name
-// @return error
-//
-func CreateNetwork(driver, subnet, name string) error {
-	return nil
-}
-
-//
-// Connect
-// @Description: 容器连接网络
-// @param networkName
-// @param containerInfo
-// @return error
-//
-func Connect(networkName string, containerInfo *record.ContainerInfo) error {
-	return nil
-}
-
-//
-// ListNetwork
-// @Description: 遍历network
-//
-func ListNetwork() {
-
-}
-
-//
-// DeleteNetwork
-// @Description: 删除一个network
-// @param networkName
-// @return error
-//
-func DeleteNetwork(networkName string) error {
-	return nil
 }
 
 func configEndpointIpaddressAndRoute(link *netlink.Link, info *record.ContainerInfo) error {
@@ -98,9 +55,6 @@ func configEndpointIpaddressAndRoute(link *netlink.Link, info *record.ContainerI
 //
 // enterContainerNetNamespace
 // @Description: 进入容器设置veth
-// @param link
-// @param info
-// @return func()
 //
 func enterContainerNetNamespace(link *netlink.Link, info *record.ContainerInfo) func() {
 	return nil
@@ -109,8 +63,6 @@ func enterContainerNetNamespace(link *netlink.Link, info *record.ContainerInfo) 
 //
 // configPortMapping
 // @Description: 配置端口映射
-// @param endpoint
-// @return error
 //
 func configPortMapping(endpoint *Endpoint) error {
 	return nil
@@ -119,9 +71,6 @@ func configPortMapping(endpoint *Endpoint) error {
 //
 // dump
 // @Description: 保存网络配置文件
-// @receiver nw
-// @param dumpPath
-// @return error
 //
 func (nw *Network) dump(dumpPath string) error {
 	return nil
@@ -130,9 +79,6 @@ func (nw *Network) dump(dumpPath string) error {
 //
 // load
 // @Description: 加载网络配置文件
-// @receiver nw
-// @param dumpPath
-// @return error
 //
 func (nw *Network) load(dumpPath string) error {
 	return nil
@@ -141,9 +87,6 @@ func (nw *Network) load(dumpPath string) error {
 //
 // remove
 // @Description: 删除网络配置文件
-// @receiver nw
-// @param dumpPath
-// @return error
 //
 func (nw *Network) remove(dumpPath string) error {
 	return nil

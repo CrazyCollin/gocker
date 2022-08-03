@@ -16,7 +16,7 @@ type IPAM struct {
 	Subnets map[string]string
 }
 
-var ipAllocator = &IPAM{SubnetAllocatorPath: record.DefaultSubnetAllocatorPath}
+var allocator = &IPAM{SubnetAllocatorPath: record.DefaultSubnetAllocatorPath}
 
 //
 // load
