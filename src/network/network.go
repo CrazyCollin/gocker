@@ -48,7 +48,7 @@ type NetworkDriver interface {
 	Disconnect(network *Network, endpoint *Endpoint) error
 }
 
-func configEndpointIpaddressAndRoute(link *netlink.Link, info *record.ContainerInfo) error {
+func configEndpointIpaddressAndRoute(endpoint *Endpoint, info *record.ContainerInfo) error {
 	return nil
 }
 

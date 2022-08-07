@@ -127,7 +127,7 @@ func (ipam *IPAM) Allocate(subnet *net.IPNet) (ip net.IP, err error) {
 // Release
 // @Description: 释放一个ip
 //
-func (ipam *IPAM) Release(subnet *net.IPNet, ipAddr net.IP) error {
+func (ipam *IPAM) Release(subnet *net.IPNet, ipAddr *net.IP) error {
 	ipam.Subnets = make(map[string]string)
 	_, subnet, _ = net.ParseCIDR(subnet.String())
 	//加载网段分配信息

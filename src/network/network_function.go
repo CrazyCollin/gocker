@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocker/src/record"
 	"io/fs"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"text/tabwriter"
 )
 
 //
@@ -83,7 +85,35 @@ func CreateNetwork(driver, subnet, name string) error {
 // @Description: 容器连接网络
 //
 func Connect(networkName string, containerInfo *record.ContainerInfo) error {
-	return nil
+	network, ok := record.Networks[networkName]
+	if !ok {
+		err := fmt.Errorf("no such network %s", networkName)
+		log.Error(err)
+		return err
+	}
+	//分配给容器一个ip
+	containerIP, err := allocator.Allocate(network.IpRange)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	endpoint := &Endpoint{
+		ID:          fmt.Sprintf("%s-%s", containerInfo.Id, networkName),
+		IpAddress:   containerIP,
+		PortMapping: containerInfo.PortMapping,
+		Network:     network,
+	}
+	//调用网络驱动连接endpoint与network
+	if err := record.Drivers[network.Driver].Connect(network, endpoint); err != nil {
+		log.Error(err)
+		return err
+	}
+	//进入容器net namespace配置容器网络设备的ip地址和路由
+	if err := configEndpointIpaddressAndRoute(endpoint, containerInfo); err != nil {
+		log.Error(err)
+		return err
+	}
+	return configPortMapping(endpoint)
 }
 
 //
@@ -91,7 +121,19 @@ func Connect(networkName string, containerInfo *record.ContainerInfo) error {
 // @Description: 遍历network
 //
 func ListNetwork() {
-
+	w := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
+	fmt.Fprint(w, "NAME\tIpRange\tDriver\n")
+	for _, v := range record.Networks {
+		fmt.Fprintf(w, "%s\t%s\t%s\n",
+			v.Name,
+			v.IpRange.String(),
+			v.Driver,
+		)
+	}
+	if err := w.Flush(); err != nil {
+		log.Error(err)
+		return
+	}
 }
 
 //
@@ -99,5 +141,20 @@ func ListNetwork() {
 // @Description: 删除指定network
 //
 func DeleteNetwork(networkName string) error {
-	return nil
+	nw, ok := record.Networks[networkName]
+	if !ok {
+		err := fmt.Errorf(" no such network: %s", networkName)
+		log.Error(err)
+		return err
+	}
+	// 调用IPAM的实例释放网络网关的IP
+	if err := allocator.Release(nw.IpRange, &nw.IpRange.IP); err != nil {
+		return fmt.Errorf(" error remove network gateway ip: %s", err)
+	}
+	// 调用网络驱动删除网络创建的设备与配置
+	if err := record.Drivers[nw.Driver].Delete(nw); err != nil {
+		return fmt.Errorf(" Error Remove Network DriverError: %s", err)
+	}
+	// 从网络的配置目录中删除该网络对应的配置文件
+	return nw.remove(record.DefaultNetworkPath)
 }
